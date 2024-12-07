@@ -1,0 +1,104 @@
+{% extends 'secretary_dash/common/base.html' %}
+
+{% block content %}
+    {% if user.is_superuser %}
+        <h1>Doctor's Dashboard</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <h3>Secretaries</h3>
+                <p>{{ secretary_count }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>Patients</h3>
+                <p>{{ patient_count }}</p>
+            </div>
+            <div class="stat-box">
+                <h3>Medicines</h3>
+                <p>{{ medicine_count }}</p>
+            </div>
+        </div>
+
+        <div class="recent-examinations">
+            <h2>Recent Examinations</h2>
+            {% if recent_examinations %}
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Results</th>
+                    </tr>
+                    {% for exam in recent_examinations %}
+                        <tr>
+                            <td>{{ exam.date }}</td>
+                            <td>{{ exam.patient }}</td>
+                            <td>{{ exam.results|truncatewords:20 }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No recent examinations.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <h1>Today's Appointments</h1>
+        {% if appointments %}
+            <table>
+                <tr>
+                    <th>Time</th>
+                    <th>Patient</th>
+                    <th>Actions</th>
+                </tr>
+                {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.time }}</td>
+                        <td>{{ appointment.patient }}</td>
+                        <td>
+                            {% if not appointment.is_cancelled %}
+                                <form method="post" action="{% url 'cancel_appointment' appointment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                </form>
+                            {% else %}
+                                <span class="cancelled-text">Cancelled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No appointments scheduled for today.</p>
+        {% endif %}
+    {% endif %}
+
+    <style>
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-box {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-box h3 {
+            margin: 0;
+            color: #6c757d;
+        }
+        .stat-box p {
+            font-size: 2rem;
+            margin: 0.5rem 0;
+            color: #007bff;
+        }
+        .recent-examinations {
+            margin-top: 2rem;
+        }
+        .cancelled-text {
+            color: #dc3545;
+            font-style: italic;
+        }
+    </style>
+{% endblock %} 

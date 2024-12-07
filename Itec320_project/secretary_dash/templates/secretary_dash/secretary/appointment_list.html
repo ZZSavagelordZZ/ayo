@@ -1,0 +1,49 @@
+{% extends 'secretary_dash/secretary/base.html' %}
+
+{% block content %}
+<div class="appointment-list-container">
+    <div class="header">
+        <h1>Manage Appointments</h1>
+        <a href="{% url 'secretary_dash:appointment_create' %}" class="btn btn-primary">Schedule New Appointment</a>
+    </div>
+
+    {% if appointments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Patient</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.date }}</td>
+                        <td>{{ appointment.time }}</td>
+                        <td>{{ appointment.patient.name }}</td>
+                        <td>{{ appointment.get_status_display }}</td>
+                        <td class="actions">
+                            <a href="{% url 'secretary_dash:appointment_edit' appointment.id %}" class="btn btn-sm">Edit</a>
+                            {% if appointment.status != 'cancelled' %}
+                                <form method="post" action="{% url 'secretary_dash:appointment_cancel' appointment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-warning">Cancel</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-data">No appointments found.</p>
+    {% endif %}
+</div>
+
+<style>
+    /* Copy styles from doctor/appointment_list.html */
+</style>
+{% endblock %} 

@@ -1,0 +1,95 @@
+{% extends 'secretary_dash/common/base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="today-appointments">
+        <h2>Today's Appointments</h2>
+        {% if today_appointments %}
+            <table>
+                <tr>
+                    <th>Time</th>
+                    <th>Patient</th>
+                    <th>Status</th>
+                </tr>
+                {% for appointment in today_appointments %}
+                    <tr>
+                        <td>{{ appointment.time }}</td>
+                        <td>{{ appointment.patient.name }}</td>
+                        <td>
+                            {% if not appointment.is_cancelled %}
+                                <form method="post" action="{% url 'secretary_dash:appointment_cancel' appointment.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                        Cancel
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="cancelled-text">Cancelled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="no-data">No appointments scheduled for today.</p>
+        {% endif %}
+    </div>
+
+    <div class="upcoming-appointments">
+        <h2>Upcoming Appointments</h2>
+        {% if upcoming_appointments %}
+            <ul>
+                {% for appointment in upcoming_appointments %}
+                    <li>
+                        {{ appointment.date }} at {{ appointment.time }} - {{ appointment.patient.name }}
+                        {% if not appointment.is_cancelled %}
+                            <form method="post" action="{% url 'secretary_dash:appointment_cancel' appointment.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                    Cancel
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="cancelled-text">Cancelled</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No upcoming appointments.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    .today-appointments, .upcoming-appointments {
+        margin-bottom: 30px;
+    }
+    .today-appointments table, .upcoming-appointments ul {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .today-appointments th, .today-appointments td {
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        text-align: left;
+    }
+    .cancelled-text {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .btn-sm {
+        padding: 3px 8px;
+        font-size: 0.875em;
+    }
+    .no-data {
+        font-style: italic;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}

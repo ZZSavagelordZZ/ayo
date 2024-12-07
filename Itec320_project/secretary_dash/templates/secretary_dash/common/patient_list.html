@@ -1,0 +1,54 @@
+{% extends request.user.is_superuser|yesno:'secretary_dash/doctor/base.html,secretary_dash/secretary/base.html' %}
+
+{% block content %}
+<div class="patient-list-container">
+    <div class="header">
+        <h1>Manage Patients</h1>
+        <a href="{% url 'secretary_dash:patient_create' %}" class="btn btn-primary">Add New Patient</a>
+    </div>
+
+    {% if patients %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Date of Birth</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.phone }}</td>
+                        <td>{{ patient.email }}</td>
+                        <td>{{ patient.date_of_birth }}</td>
+                        <td class="actions">
+                            <a href="{% url 'secretary_dash:patient_detail' patient.id %}" class="btn btn-sm">View</a>
+                            <a href="{% url 'secretary_dash:patient_edit' patient.id %}" class="btn btn-sm">Edit</a>
+                            {% if request.user.is_superuser %}
+                                <a href="{% url 'secretary_dash:examination_create' %}?patient={{ patient.id }}" class="btn btn-sm">New Examination</a>
+                            {% endif %}
+                            <form method="post" action="{% url 'secretary_dash:patient_delete' patient.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Are you sure you want to delete this patient?')">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-data">No patients found. Add your first patient using the button above.</p>
+    {% endif %}
+</div>
+
+<style>
+    /* Keep existing styles */
+</style>
+{% endblock %} 

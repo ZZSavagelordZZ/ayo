@@ -1,0 +1,136 @@
+{% extends 'secretary_dash/common/base.html' %}
+
+{% block content %}
+<div class="examination-form-container">
+    <h1>New Examination</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-section">
+            <h2>Patient Information</h2>
+            <div class="form-group">
+                <label for="{{ form.patient.id_for_label }}">Patient:</label>
+                {{ form.patient }}
+                {% if form.patient.errors %}
+                    <div class="error">{{ form.patient.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.symptoms.id_for_label }}">Symptoms:</label>
+                {{ form.symptoms }}
+                {% if form.symptoms.errors %}
+                    <div class="error">{{ form.symptoms.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.diagnosis.id_for_label }}">Diagnosis:</label>
+                {{ form.diagnosis }}
+                {% if form.diagnosis.errors %}
+                    <div class="error">{{ form.diagnosis.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <h2>Prescriptions</h2>
+            {{ prescription_formset.management_form }}
+            <div id="prescriptions">
+                {% for prescription_form in prescription_formset %}
+                    <div class="prescription-form">
+                        <div class="form-group">
+                            <label>Medicine:</label>
+                            {{ prescription_form.medicine }}
+                        </div>
+                        <div class="form-group">
+                            <label>Dosage:</label>
+                            {{ prescription_form.dosage }}
+                        </div>
+                        <div class="form-group">
+                            <label>Duration:</label>
+                            {{ prescription_form.duration }}
+                        </div>
+                        <div class="form-group">
+                            <label>Notes:</label>
+                            {{ prescription_form.notes }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-prescription" class="btn btn-secondary">Add Another Prescription</button>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Examination</button>
+            <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .examination-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .form-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .prescription-form {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+    }
+    .form-actions {
+        margin-top: 20px;
+    }
+    .error {
+        color: red;
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+</style>
+
+<script>
+    document.getElementById('add-prescription').addEventListener('click', function() {
+        const prescriptions = document.getElementById('prescriptions');
+        const formCount = document.querySelector('[name="prescription_set-TOTAL_FORMS"]');
+        const newForm = prescriptions.children[0].cloneNode(true);
+        
+        // Update form index
+        const index = prescriptions.children.length;
+        newForm.innerHTML = newForm.innerHTML.replace(/-0-/g, `-${index}-`);
+        
+        // Clear form values
+        newForm.querySelectorAll('input, select, textarea').forEach(input => {
+            input.value = '';
+        });
+        
+        prescriptions.appendChild(newForm);
+        formCount.value = index + 1;
+    });
+</script>
+{% endblock %} 

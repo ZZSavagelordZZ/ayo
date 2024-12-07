@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medical Management System - Doctor</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        nav {
+            background-color: #343a40;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            background-color: #007bff;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .dashboard-container {
+            padding: 2rem;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="{% url 'secretary_dash:doctor_dashboard' %}" class="btn">Dashboard</a>
+            <a href="{% url 'secretary_dash:secretary_list' %}" class="btn">Secretaries</a>
+            <a href="{% url 'secretary_dash:patient_list' %}" class="btn">Patients</a>
+            <a href="{% url 'secretary_dash:medicine_list' %}" class="btn">Medicines</a>
+            <a href="{% url 'secretary_dash:appointment_list' %}" class="btn">Appointments</a>
+            <a href="{% url 'secretary_dash:examination_list' %}" class="btn">Examinations</a>
+            <a href="{% url 'secretary_dash:logout' %}" class="btn btn-secondary">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html> 
