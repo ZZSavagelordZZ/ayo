@@ -1,42 +1,106 @@
-{% extends 'secretary_dash/common/base.html' %}
+{% extends request.user.is_superuser|yesno:'secretary_dash/doctor/base.html,secretary_dash/secretary/base.html' %}
 
 {% block content %}
-    <h1>{% if form.instance.pk %}Edit Patient{% else %}Add New Patient{% endif %}</h1>
-    
+<div class="patient-form-container">
+    <h1>{% if form.instance.pk %}Edit{% else %}Add New{% endif %} Patient</h1>
+
     <form method="post">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="error">{{ field.errors }}</div>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="btn">Save</button>
-        <a href="{% url 'patient_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+        
+        <div class="form-group">
+            <label for="{{ form.name.id_for_label }}">Name:</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+                <div class="error">{{ form.name.errors }}</div>
+            {% endif %}
+        </div>
 
-    <style>
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .error {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-    </style>
+        <div class="form-group">
+            <label for="{{ form.date_of_birth.id_for_label }}">Date of Birth:</label>
+            {{ form.date_of_birth }}
+            {% if form.date_of_birth.errors %}
+                <div class="error">{{ form.date_of_birth.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.gender.id_for_label }}">Gender:</label>
+            {{ form.gender }}
+            {% if form.gender.errors %}
+                <div class="error">{{ form.gender.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.phone.id_for_label }}">Phone:</label>
+            {{ form.phone }}
+            {% if form.phone.errors %}
+                <div class="error">{{ form.phone.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email:</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div class="error">{{ form.email.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.address.id_for_label }}">Address:</label>
+            {{ form.address }}
+            {% if form.address.errors %}
+                <div class="error">{{ form.address.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.medical_history.id_for_label }}">Medical History:</label>
+            {{ form.medical_history }}
+            {% if form.medical_history.errors %}
+                <div class="error">{{ form.medical_history.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Patient</button>
+            <a href="{% url 'secretary_dash:patient_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .patient-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .form-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+    }
+</style>
 {% endblock %} 

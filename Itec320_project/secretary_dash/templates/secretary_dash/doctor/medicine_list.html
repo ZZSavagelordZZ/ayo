@@ -1,4 +1,4 @@
-{% extends 'secretary_dash/common/base.html' %}
+{% extends 'secretary_dash/doctor/base.html' %}
 
 {% block content %}
 <div class="medicine-list-container">
@@ -13,7 +13,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Description</th>
-                    <th>Side Effects</th>
+                    <th>Stock</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -22,7 +22,7 @@
                     <tr>
                         <td>{{ medicine.name }}</td>
                         <td>{{ medicine.description|truncatewords:20 }}</td>
-                        <td>{{ medicine.side_effects|truncatewords:20 }}</td>
+                        <td>{{ medicine.stock }}</td>
                         <td class="actions">
                             <a href="{% url 'secretary_dash:medicine_edit' medicine.id %}" class="btn btn-sm">Edit</a>
                             <form method="post" action="{% url 'secretary_dash:medicine_delete' medicine.id %}" style="display: inline;">

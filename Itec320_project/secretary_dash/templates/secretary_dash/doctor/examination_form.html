@@ -1,8 +1,8 @@
-{% extends 'secretary_dash/common/base.html' %}
+{% extends 'secretary_dash/doctor/base.html' %}
 
 {% block content %}
 <div class="examination-form-container">
-    <h1>New Examination</h1>
+    <h1>{{ title }}</h1>
 
     <form method="post">
         {% csrf_token %}
@@ -16,7 +16,10 @@
                     <div class="error">{{ form.patient.errors }}</div>
                 {% endif %}
             </div>
+        </div>
 
+        <div class="form-section">
+            <h2>Examination Details</h2>
             <div class="form-group">
                 <label for="{{ form.symptoms.id_for_label }}">Symptoms:</label>
                 {{ form.symptoms }}
@@ -43,19 +46,37 @@
                         <div class="form-group">
                             <label>Medicine:</label>
                             {{ prescription_form.medicine }}
+                            {% if prescription_form.medicine.errors %}
+                                <div class="error">{{ prescription_form.medicine.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="form-group">
                             <label>Dosage:</label>
                             {{ prescription_form.dosage }}
+                            {% if prescription_form.dosage.errors %}
+                                <div class="error">{{ prescription_form.dosage.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="form-group">
                             <label>Duration:</label>
                             {{ prescription_form.duration }}
+                            {% if prescription_form.duration.errors %}
+                                <div class="error">{{ prescription_form.duration.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="form-group">
                             <label>Notes:</label>
                             {{ prescription_form.notes }}
+                            {% if prescription_form.notes.errors %}
+                                <div class="error">{{ prescription_form.notes.errors }}</div>
+                            {% endif %}
                         </div>
+                        {% if prescription_form.DELETE %}
+                            <div class="delete-row">
+                                {{ prescription_form.DELETE }}
+                                <label for="{{ prescription_form.DELETE.id_for_label }}">Delete this prescription</label>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
@@ -64,7 +85,7 @@
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Examination</button>
-            <a href="{% url 'doctor_dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'secretary_dash:examination_list' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
@@ -78,59 +99,79 @@
     .form-section {
         background: white;
         padding: 20px;
-        border-radius: 8px;
+        border-radius: 4px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .form-section h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 1.5rem;
     }
     .form-group {
-        margin-bottom: 15px;
+        margin-bottom: 1rem;
     }
     .form-group label {
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 0.5rem;
         font-weight: bold;
     }
     .form-group input,
     .form-group select,
     .form-group textarea {
         width: 100%;
-        padding: 8px;
+        padding: 0.5rem;
         border: 1px solid #ddd;
         border-radius: 4px;
+    }
+    .form-group textarea {
+        height: 100px;
+        resize: vertical;
     }
     .prescription-form {
-        border: 1px solid #ddd;
+        background: #f8f9fa;
         padding: 15px;
-        margin-bottom: 15px;
         border-radius: 4px;
+        margin-bottom: 15px;
     }
-    .form-actions {
-        margin-top: 20px;
+    .delete-row {
+        margin-top: 10px;
+        color: #dc3545;
     }
     .error {
-        color: red;
+        color: #dc3545;
         font-size: 0.875rem;
-        margin-top: 5px;
+        margin-top: 0.25rem;
+    }
+    .form-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
     }
 </style>
 
 <script>
-    document.getElementById('add-prescription').addEventListener('click', function() {
-        const prescriptions = document.getElementById('prescriptions');
-        const formCount = document.querySelector('[name="prescription_set-TOTAL_FORMS"]');
-        const newForm = prescriptions.children[0].cloneNode(true);
+    document.addEventListener('DOMContentLoaded', function() {
+        const addButton = document.getElementById('add-prescription');
+        const prescriptionsContainer = document.getElementById('prescriptions');
+        const totalForms = document.getElementById('id_prescription_set-TOTAL_FORMS');
         
-        // Update form index
-        const index = prescriptions.children.length;
-        newForm.innerHTML = newForm.innerHTML.replace(/-0-/g, `-${index}-`);
-        
-        // Clear form values
-        newForm.querySelectorAll('input, select, textarea').forEach(input => {
-            input.value = '';
+        addButton.addEventListener('click', function() {
+            const formCount = prescriptionsContainer.children.length;
+            const template = prescriptionsContainer.children[0].cloneNode(true);
+            
+            // Update form index
+            template.innerHTML = template.innerHTML.replace(/-\d+-/g, `-${formCount}-`);
+            
+            // Clear form values
+            template.querySelectorAll('input, select, textarea').forEach(input => {
+                input.value = '';
+            });
+            
+            prescriptionsContainer.appendChild(template);
+            totalForms.value = formCount + 1;
         });
-        
-        prescriptions.appendChild(newForm);
-        formCount.value = index + 1;
     });
 </script>
 {% endblock %} 

@@ -1,90 +1,207 @@
-{% extends 'secretary_dash/common/base.html' %}
+{% extends 'secretary_dash/doctor/base.html' %}
 
 {% block content %}
-<div class="doctor-dashboard">
-    <h1>Doctor Dashboard</h1>
-    
-    <div class="appointments-today">
+<div class="dashboard-container">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <h3>Total Patients</h3>
+                <p class="stat-number">{{ total_patients }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-content">
+                <h3>Active Appointments</h3>
+                <p class="stat-number">{{ total_appointments }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏥</div>
+            <div class="stat-content">
+                <h3>Total Examinations</h3>
+                <p class="stat-number">{{ total_examinations }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💊</div>
+            <div class="stat-content">
+                <h3>Available Medicines</h3>
+                <p class="stat-number">{{ total_medicines }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Calendar -->
+    <div class="dashboard-section">
+        <h2>Weekly Appointments</h2>
+        <div class="week-calendar">
+            {% for day in appointments_by_day %}
+                <div class="day-card {% if day.date == today %}today{% endif %}">
+                    <h3>{{ day.date|date:"D" }}</h3>
+                    <p class="date">{{ day.date|date:"M d" }}</p>
+                    <p class="appointment-count">{{ day.count }} appointments</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Today's Appointments -->
+    <div class="dashboard-section">
         <h2>Today's Appointments</h2>
         {% if today_appointments %}
-            <table>
-                <tr>
-                    <th>Time</th>
-                    <th>Patient</th>
-                    <th>Status</th>
-                </tr>
+            <div class="appointment-list">
                 {% for appointment in today_appointments %}
-                    <tr>
-                        <td>{{ appointment.time }}</td>
-                        <td>{{ appointment.patient.name }}</td>
-                        <td>
+                    <div class="appointment-card">
+                        <div class="time">{{ appointment.time|time:"H:i" }}</div>
+                        <div class="details">
+                            <h4>{{ appointment.patient.name }}</h4>
+                            <p>📞 {{ appointment.patient.phone }}</p>
+                        </div>
+                        <div class="actions">
                             {% if not appointment.is_cancelled %}
-                                <form method="post" action="{% url 'secretary_dash:doctor_cancel_appointment' appointment.id %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                            onclick="return confirm('Are you sure you want to cancel this appointment?')">
-                                        Cancel
-                                    </button>
-                                </form>
-                            {% else %}
-                                <span class="cancelled-text">Cancelled</span>
+                                <a href="{% url 'secretary_dash:examination_create' %}?appointment={{ appointment.id }}" 
+                                   class="btn btn-sm btn-primary">Start Examination</a>
                             {% endif %}
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 {% endfor %}
-            </table>
+            </div>
         {% else %}
-            <p>No appointments scheduled for today.</p>
+            <p class="no-data">No appointments scheduled for today.</p>
         {% endif %}
     </div>
-    
-    <div class="upcoming-appointments">
-        <h2>Upcoming Appointments</h2>
-        {% if upcoming_appointments %}
-            <ul>
-                {% for appointment in upcoming_appointments %}
-                    <li>{{ appointment.date }} at {{ appointment.time }} - {{ appointment.patient.name }}</li>
+
+    <!-- Recent Examinations -->
+    <div class="dashboard-section">
+        <h2>Recent Examinations</h2>
+        {% if recent_examinations %}
+            <div class="examination-list">
+                {% for examination in recent_examinations %}
+                    <div class="examination-card">
+                        <div class="date">{{ examination.date|date:"M d, Y" }}</div>
+                        <div class="details">
+                            <h4>{{ examination.patient.name }}</h4>
+                            <p>{{ examination.diagnosis|truncatewords:20 }}</p>
+                        </div>
+                        <div class="actions">
+                            <a href="{% url 'secretary_dash:examination_detail' examination.id %}" 
+                               class="btn btn-sm">View Details</a>
+                        </div>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% else %}
-            <p>No upcoming appointments.</p>
+            <p class="no-data">No recent examinations.</p>
         {% endif %}
     </div>
 </div>
 
 <style>
-    .doctor-dashboard {
+    .dashboard-container {
         padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
     }
-    .appointments-today, .upcoming-appointments {
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
         margin-bottom: 30px;
     }
-    table {
-        width: 100%;
-        border-collapse: collapse;
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
     }
-    th, td {
-        border: 1px solid #dee2e6;
-        padding: 8px;
-        text-align: left;
+    .stat-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+    }
+    .stat-content h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .stat-number {
+        margin: 5px 0 0;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .dashboard-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .dashboard-section h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .week-calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+    }
+    .day-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .day-card.today {
+        background: #e3f2fd;
+        border: 2px solid #2196f3;
+    }
+    .day-card h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    .day-card .date {
+        margin: 5px 0;
+        color: #666;
+    }
+    .appointment-card, .examination-card {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    .time {
+        font-size: 1.1rem;
+        font-weight: bold;
+        min-width: 80px;
+    }
+    .details {
+        flex: 1;
+    }
+    .details h4 {
+        margin: 0;
+        color: #333;
+    }
+    .details p {
+        margin: 5px 0 0;
+        color: #666;
+    }
+    .actions {
+        margin-left: 15px;
     }
     .btn-sm {
-        padding: 3px 8px;
-        font-size: 0.875em;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
     }
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .btn-danger:hover {
-        background-color: #c82333;
-    }
-    .cancelled-text {
-        color: #dc3545;
-        font-weight: bold;
+    .no-data {
+        text-align: center;
+        color: #666;
+        padding: 20px;
     }
 </style>
 {% endblock %}

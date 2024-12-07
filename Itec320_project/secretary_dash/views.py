@@ -9,6 +9,8 @@ from .forms import (
     ExaminationForm, SecretaryCreationForm, PrescriptionForm
 )
 from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models import Count
 
 def is_secretary(user):
     return Secretary.objects.filter(user=user).exists()
@@ -51,82 +53,137 @@ def login_view(request):
     return render(request, 'secretary_dash/login.html')
 
 # Common views for both roles
-@login_required
-@user_passes_test(lambda u: u.is_superuser or is_secretary(u))
-def patient_list(request):
-    patients = Patient.objects.all()
-    template = 'secretary_dash/doctor/patient_list.html' if request.user.is_superuser else 'secretary_dash/secretary/patient_list.html'
-    return render(request, template, {'patients': patients})
+def is_staff(user):
+    """Check if user is either a doctor (superuser) or secretary"""
+    return user.is_superuser or hasattr(user, 'secretary')
 
 @login_required
+@user_passes_test(is_staff)
+def patient_list(request):
+    patients = Patient.objects.all().order_by('name')
+    return render(request, 'secretary_dash/common/patient_list.html', {
+        'patients': patients
+    })
+
+@login_required
+@user_passes_test(is_staff)
 def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Patient created successfully!')
+            patient = form.save()
+            messages.success(request, 'Patient added successfully.')
             return redirect('secretary_dash:patient_list')
     else:
         form = PatientForm()
-    return render(request, 'secretary_dash/common/patient_form.html', {'form': form})
+    
+    return render(request, 'secretary_dash/common/patient_form.html', {
+        'form': form,
+        'title': 'Add New Patient'
+    })
 
 @login_required
+@user_passes_test(is_staff)
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
     if request.method == 'POST':
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Patient updated successfully!')
+            messages.success(request, 'Patient updated successfully.')
             return redirect('secretary_dash:patient_list')
     else:
         form = PatientForm(instance=patient)
-    return render(request, 'secretary_dash/common/patient_form.html', {'form': form})
+    
+    return render(request, 'secretary_dash/common/patient_form.html', {
+        'form': form,
+        'title': 'Edit Patient'
+    })
 
 @login_required
+@user_passes_test(is_staff)
+def patient_detail(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    return render(request, 'secretary_dash/common/patient_detail.html', {
+        'patient': patient
+    })
+
+@login_required
+@user_passes_test(is_staff)
 def patient_delete(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
     if request.method == 'POST':
         patient.delete()
-        messages.success(request, 'Patient deleted successfully!')
+        messages.success(request, 'Patient deleted successfully.')
         return redirect('secretary_dash:patient_list')
-    return render(request, 'secretary_dash/common/patient_confirm_delete.html', {'patient': patient})
-
-@login_required
-def patient_detail(request, pk):
-    patient = get_object_or_404(Patient, pk=pk)
-    examinations = Examination.objects.filter(patient=patient)
-    context = {
-        'patient': patient,
-        'examinations': examinations
-    }
-    return render(request, 'secretary_dash/doctor/patient_detail.html', context)
+    return render(request, 'secretary_dash/common/patient_confirm_delete.html', {
+        'patient': patient
+    })
 
 # Appointment Management Views
 @login_required
 @user_passes_test(lambda u: u.is_superuser or is_secretary(u))
 def appointment_list(request):
     appointments = Appointment.objects.all().order_by('date', 'time')
-    template = 'secretary_dash/doctor/appointment_list.html' if request.user.is_superuser else 'secretary_dash/secretary/appointment_list.html'
-    return render(request, template, {'appointments': appointments})
+    return render(request, 'secretary_dash/common/appointment_list.html', {'appointments': appointments})
 
 @login_required
+@user_passes_test(lambda u: u.is_superuser or is_secretary(u))
 def appointment_create(request):
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Appointment scheduled successfully!')
+            appointment = form.save(commit=False)
+            # Get the secretary instance for the current user
+            if request.user.is_superuser:
+                # If it's a doctor (superuser), we'll need a default secretary
+                secretary = Secretary.objects.first()  # or some logic to determine default secretary
+                if not secretary:
+                    messages.error(request, 'No secretary available to create appointment.')
+                    return redirect('secretary_dash:appointment_list')
+            else:
+                secretary = request.user.secretary
+            
+            appointment.created_by = secretary
+            appointment.save()
+            messages.success(request, 'Appointment scheduled successfully.')
             return redirect('secretary_dash:appointment_list')
     else:
-        form = AppointmentForm()
-    return render(request, 'secretary_dash/common/appointment_form.html', {'form': form, 'title': 'Schedule New Appointment'})
+        initial = {}
+        if patient_id := request.GET.get('patient'):
+            initial['patient'] = patient_id
+        form = AppointmentForm(initial=initial)
+    return render(request, 'secretary_dash/common/appointment_form.html', {
+        'form': form,
+        'title': 'Schedule New Appointment'
+    })
 
 @login_required
-def appointment_cancel(request, pk):
+@user_passes_test(lambda u: u.is_superuser or is_secretary(u))
+def appointment_detail(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk)
+    return render(request, 'secretary_dash/common/appointment_detail.html', {'appointment': appointment})
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or is_secretary(u))
+def appointment_edit(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
     if request.method == 'POST':
-        appointment.is_cancelled = True
+        form = AppointmentForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Appointment updated successfully.')
+            return redirect('secretary_dash:appointment_list')
+    else:
+        form = AppointmentForm(instance=appointment)
+    return render(request, 'secretary_dash/common/appointment_form.html', {'form': form, 'title': 'Edit Appointment'})
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or is_secretary(u))
+def appointment_cancel(request, pk):
+    if request.method == 'POST':
+        appointment = get_object_or_404(Appointment, pk=pk)
+        appointment.status = 'cancelled'
         appointment.save()
         messages.success(request, 'Appointment cancelled successfully!')
     return redirect('secretary_dash:appointment_list')
@@ -158,15 +215,66 @@ def doctor_cancel_appointment(request, pk):
 
 # Secretary-specific views
 @login_required
-@user_passes_test(is_secretary)
+@user_passes_test(lambda u: hasattr(u, 'secretary'))
 def secretary_dashboard(request):
-    today = datetime.now().date()
+    # Get today's date and end of week
+    today = timezone.localdate()
+    week_end = today + timedelta(days=6)
+    
+    # Get the secretary instance for the current user
+    secretary = request.user.secretary
+    
+    # Get upcoming appointments for the week
+    upcoming_appointments = Appointment.objects.filter(
+        date__gte=today,
+        date__lte=week_end,
+        is_cancelled=False
+    ).order_by('date', 'time')
+    
+    # Get today's appointments
+    today_appointments = Appointment.objects.filter(
+        date=today,
+        is_cancelled=False
+    ).order_by('time')
+    
+    # Get statistics
+    total_patients = Patient.objects.count()
+    total_active_appointments = Appointment.objects.filter(
+        date__gte=today,
+        is_cancelled=False
+    ).count()
+    my_created_appointments = Appointment.objects.filter(
+        created_by=secretary,
+        is_cancelled=False
+    ).count()
+    
+    # Get appointments by day for the week
+    appointments_by_day = []
+    for i in range(7):
+        date = today + timedelta(days=i)
+        count = Appointment.objects.filter(
+            date=date,
+            is_cancelled=False
+        ).count()
+        appointments_by_day.append({
+            'date': date,
+            'count': count
+        })
+    
+    # Get recent patients (last 5 added)
+    recent_patients = Patient.objects.all().order_by('-created_at')[:5]
+    
     context = {
-        'today_appointments': Appointment.objects.filter(date=today).order_by('time'),
-        'upcoming_appointments': Appointment.objects.filter(
-            date__gt=today
-        ).order_by('date', 'time')[:5]
+        'today': today,  # Add this to properly highlight today in the calendar
+        'total_patients': total_patients,
+        'total_active_appointments': total_active_appointments,
+        'my_created_appointments': my_created_appointments,
+        'today_appointments': today_appointments,
+        'upcoming_appointments': upcoming_appointments,
+        'appointments_by_day': appointments_by_day,
+        'recent_patients': recent_patients,
     }
+    
     return render(request, 'secretary_dash/secretary/dashboard.html', context)
 
 # Additional Secretary Views
@@ -175,37 +283,48 @@ def secretary_dashboard(request):
 def secretary_list(request):
     """
     View to list all secretaries.
-    Accessible only by doctors.
+    Only accessible by doctors.
     """
-    secretaries = Secretary.objects.all()
+    secretaries = Secretary.objects.all().order_by('user__username')
     return render(request, 'secretary_dash/doctor/secretary_list.html', {'secretaries': secretaries})
 
 @login_required
-@user_passes_test(is_secretary)
+@user_passes_test(is_doctor)
 def secretary_create(request):
+    """
+    View to create a new secretary.
+    Only accessible by doctors.
+    """
     if request.method == 'POST':
         form = SecretaryCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            Secretary.objects.create(user=user, phone=form.cleaned_data.get('phone'))
             messages.success(request, 'Secretary created successfully!')
             return redirect('secretary_dash:secretary_list')
     else:
         form = SecretaryCreationForm()
-    return render(request, 'secretary_dash/common/secretary_form.html', {'form': form, 'title': 'Create Secretary'})
+    return render(request, 'secretary_dash/doctor/secretary_form.html', {'form': form, 'title': 'Add New Secretary'})
 
 @login_required
-@user_passes_test(is_secretary)
+@user_passes_test(is_doctor)
 def secretary_edit(request, pk):
+    """
+    View to edit an existing secretary.
+    Only accessible by doctors.
+    """
     secretary = get_object_or_404(Secretary, pk=pk)
     if request.method == 'POST':
-        form = SecretaryCreationForm(request.POST, instance=secretary)
+        form = SecretaryCreationForm(request.POST, instance=secretary.user)
         if form.is_valid():
             form.save()
+            secretary.phone = form.cleaned_data.get('phone')
+            secretary.save()
             messages.success(request, 'Secretary updated successfully!')
             return redirect('secretary_dash:secretary_list')
     else:
-        form = SecretaryCreationForm(instance=secretary)
-    return render(request, 'secretary_dash/common/secretary_form.html', {'form': form, 'title': 'Edit Secretary'})
+        form = SecretaryCreationForm(instance=secretary.user, initial={'phone': secretary.phone})
+    return render(request, 'secretary_dash/doctor/secretary_form.html', {'form': form, 'title': 'Edit Secretary'})
 
 @login_required
 @user_passes_test(is_doctor)
@@ -224,16 +343,56 @@ def doctor_dashboard(request):
     """
     View for the doctor's dashboard.
     """
-    today = datetime.now().date()
-    appointments_today = Appointment.objects.filter(date=today).order_by('time')
+    # Get today's date and end of week
+    today = timezone.localdate()
+    week_end = today + timedelta(days=6)
+    
+    # Get upcoming appointments for the week
     upcoming_appointments = Appointment.objects.filter(
-        date__gt=today
-    ).order_by('date', 'time')[:5]
+        date__gte=today,
+        date__lte=week_end,
+        is_cancelled=False
+    ).order_by('date', 'time')
+    
+    # Get today's appointments
+    today_appointments = Appointment.objects.filter(
+        date=today,
+        is_cancelled=False
+    ).order_by('time')
+    
+    # Get statistics
+    total_patients = Patient.objects.count()
+    total_appointments = Appointment.objects.filter(is_cancelled=False).count()
+    total_examinations = Examination.objects.count()
+    total_medicines = Medicine.objects.count()
+    
+    # Get appointments by day for the week
+    appointments_by_day = []
+    for i in range(7):
+        date = today + timedelta(days=i)
+        appointments = Appointment.objects.filter(
+            date=date,
+            is_cancelled=False
+        ).count()
+        appointments_by_day.append({
+            'date': date,
+            'count': appointments
+        })
+    
+    # Get recent examinations
+    recent_examinations = Examination.objects.all().order_by('-created_at')[:5]
     
     context = {
-        'today_appointments': appointments_today,
+        'total_patients': total_patients,
+        'total_appointments': total_appointments,
+        'total_examinations': total_examinations,
+        'total_medicines': total_medicines,
+        'today_appointments': today_appointments,
         'upcoming_appointments': upcoming_appointments,
+        'appointments_by_day': appointments_by_day,
+        'recent_examinations': recent_examinations,
     }
+    
     return render(request, 'secretary_dash/doctor/dashboard.html', context)
 
 @login_required
@@ -289,24 +448,87 @@ def medicine_delete(request, pk):
     return render(request, 'secretary_dash/doctor/medicine_confirm_delete.html', {'medicine': medicine})
 
 @login_required
-@user_passes_test(is_doctor)
+@user_passes_test(lambda u: u.is_superuser)
 def examination_list(request):
-    examinations = Examination.objects.all().order_by('-date', '-time')
-    return render(request, 'secretary_dash/doctor/examination_list.html', {'examinations': examinations})
+    examinations = Examination.objects.all().order_by('-date', '-created_at')
+    return render(request, 'secretary_dash/doctor/examination_list.html', {
+        'examinations': examinations
+    })
 
 @login_required
+@user_passes_test(lambda u: u.is_superuser)
 def examination_create(request):
-    """
-    View to create a new examination.
-    """
+    PrescriptionFormSet = inlineformset_factory(
+        Examination, 
+        Prescription, 
+        form=PrescriptionForm,
+        extra=1,
+        can_delete=True
+    )
+    
     if request.method == 'POST':
         form = ExaminationForm(request.POST)
         if form.is_valid():
             examination = form.save(commit=False)
-            examination.doctor = request.user
+            examination.created_by = request.user
             examination.save()
-            messages.success(request, 'Examination created successfully!')
-            return redirect('secretary_dash:examination_list')
+            
+            formset = PrescriptionFormSet(request.POST, instance=examination)
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, 'Examination created successfully.')
+                return redirect('secretary_dash:examination_list')
     else:
-        form = ExaminationForm()
-    return render(request, 'secretary_dash/common/examination_form.html', {'form': form})
+        initial = {}
+        if appointment_id := request.GET.get('appointment'):
+            appointment = get_object_or_404(Appointment, id=appointment_id)
+            initial['patient'] = appointment.patient
+        
+        form = ExaminationForm(initial=initial)
+        formset = PrescriptionFormSet()
+    
+    return render(request, 'secretary_dash/doctor/examination_form.html', {
+        'form': form,
+        'prescription_formset': formset,
+        'title': 'New Examination'
+    })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def examination_edit(request, pk):
+    examination = get_object_or_404(Examination, pk=pk)
+    PrescriptionFormSet = inlineformset_factory(
+        Examination, 
+        Prescription, 
+        form=PrescriptionForm,
+        extra=1,
+        can_delete=True
+    )
+    
+    if request.method == 'POST':
+        form = ExaminationForm(request.POST, instance=examination)
+        if form.is_valid():
+            examination = form.save()
+            
+            formset = PrescriptionFormSet(request.POST, instance=examination)
+            if formset.is_valid():
+                formset.save()
+                messages.success(request, 'Examination updated successfully.')
+                return redirect('secretary_dash:examination_list')
+    else:
+        form = ExaminationForm(instance=examination)
+        formset = PrescriptionFormSet(instance=examination)
+    
+    return render(request, 'secretary_dash/doctor/examination_form.html', {
+        'form': form,
+        'prescription_formset': formset,
+        'title': 'Edit Examination'
+    })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def examination_detail(request, pk):
+    examination = get_object_or_404(Examination, pk=pk)
+    return render(request, 'secretary_dash/doctor/examination_detail.html', {
+        'examination': examination
+    })

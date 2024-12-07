@@ -62,7 +62,10 @@
             <a href="{% url 'secretary_dash:medicine_list' %}" class="btn">Medicines</a>
             <a href="{% url 'secretary_dash:appointment_list' %}" class="btn">Appointments</a>
             <a href="{% url 'secretary_dash:examination_list' %}" class="btn">Examinations</a>
-            <a href="{% url 'secretary_dash:logout' %}" class="btn btn-secondary">Logout</a>
+            <div class="user-menu">
+                <a href="{% url 'secretary_dash:password_change' %}" class="btn">Change Password</a>
+                <a href="{% url 'secretary_dash:logout' %}" class="btn btn-secondary">Logout</a>
+            </div>
         </div>
     </nav>
 
