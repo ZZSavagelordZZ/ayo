@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="listing-entry">
+<h2>{{ object.job_title }}</h2> <!-- Displaying the job title using Django
+template variable syntax. 'object' is a variable passed to this template. -->
+<p>by {{ object.company }} | {{ object.date }}</p> <!-- Displaying company
+and date information using the same Django template variable syntax. -->
+<p>{{ object.description }}</p> <!-- Displaying the job description. -->
+</div>
+<p><a href="{% url 'listing_edit' listing.pk %}">Edit</a> | <!-- Creating a link
+to the 'listing_edit' URL with the primary key (pk) of the listing. The URL is
+generated using the 'url' template tag. -->
+<a href="{% url 'listing_delete' listing.pk %}">Delete</a></p> <!-- Creating a
+link to the 'listing_delete' URL with the primary key (pk) of the listing. The
+URL is generated using the 'url' template tag. -->
+<p>Back to <a href="{% url 'listing_list' %}">All Listings</a>.</p> <!--
+Creating a link to the 'listing_list' URL, likely leading back to a page
+displaying all listings. The URL is generated using the 'url' template tag. -->
+{% endblock content %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ medicine.name }}</h1>
+        <div class="card mb-4">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Description</dt>
+                    <dd class="col-sm-9">{{ medicine.description }}</dd>
+                    
+                    <dt class="col-sm-3">Dosage Instructions</dt>
+                    <dd class="col-sm-9">{{ medicine.dosage_instructions }}</dd>
+                    
+                    <dt class="col-sm-3">Added On</dt>
+                    <dd class="col-sm-9">{{ medicine.created_at }}</dd>
+                    
+                    <dt class="col-sm-3">Last Updated</dt>
+                    <dd class="col-sm-9">{{ medicine.updated_at }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Actions</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'medicine_update' medicine.pk %}" class="btn btn-warning">Edit Medicine</a>
+                    <a href="{% url 'medicine_delete' medicine.pk %}" class="btn btn-danger">Delete Medicine</a>
+                    <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

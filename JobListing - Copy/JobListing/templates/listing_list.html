@@ -1,0 +1,24 @@
+{% extends 'base.html' %} 
+{% block title %}Job Listings{% endblock title %} 
+{% block content %} 
+<h1>Job Listings</h1> <!-- Just a regular HTML heading to display 'Job Listings' on the page. --> 
+{% for listing in object_list %} <!-- This is a Django template tag for a loop. It iterates over each 'listing' in the 'object_list'. The 'object_list' is passed from the Django view and contains the job listings to be displayed. --> 
+<div class="card"> 
+<div class="card-header"> 
+<span class="font-weight-bold">{{ listing.job_title }}</span> &middot; 
+<span class="text-muted">by {{ listing.company }} | {{ listing.date }}</span> 
+</div> 
+<div class="card-body"> 
+{{ listing.description }} <!-- Here, we're outputting the job description within the card body. --> 
+</div> 
+<div class="card-footer text-center text-muted"> 
+    <a href="{% url 'listing_edit' listing.pk %}">Edit</a> |
+    <a href="{% url 'listing_delete' listing.pk %}">Delete</a>
+    </div> <!-- This is a card footer with links for editing and deleting the job listing. The '#' in the 'href' attribute means these links don't currently lead anywhere. --> 
+</div> 
+    <br /> 
+{% endfor %} <!-- Closing the loop. --> 
+{% endblock content %} 
+    
+
+    

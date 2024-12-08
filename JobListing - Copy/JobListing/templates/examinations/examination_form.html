@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .prescription-form {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.25rem;
+        position: relative;
+    }
+    .delete-prescription {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+    .add-prescription {
+        margin-bottom: 1rem;
+    }
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+    }
+    .error-feedback {
+        color: #dc3545;
+        font-size: 80%;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">
+                        {% if form.instance.pk %}Edit{% else %}New{% endif %} Examination
+                    </h2>
+
+                    <div class="alert alert-info">
+                        <strong>Patient:</strong> {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}<br>
+                        <strong>Appointment:</strong> {{ appointment.date|date:"F j, Y" }} at {{ appointment.time|time:"H:i" }}
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Examination Details -->
+                        <h4 class="mb-3">Examination Details</h4>
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <div class="error-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <!-- Prescriptions -->
+                        <h4 class="mb-3">Prescriptions</h4>
+                        {{ prescription_formset.management_form }}
+                        <div id="prescription-forms">
+                            {% for prescription_form in prescription_formset %}
+                                <div class="prescription-form">
+                                    {% for hidden in prescription_form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                    {% for field in prescription_form.visible_fields %}
+                                        {% if field.name != 'DELETE' %}
+                                            <div class="mb-3">
+                                                <label for="{{ field.id_for_label }}" class="form-label">
+                                                    {{ field.label }}
+                                                </label>
+                                                {{ field }}
+                                                {% if field.errors %}
+                                                    {% for error in field.errors %}
+                                                        <div class="error-feedback">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not forloop.first %}
+                                        <button type="button" class="btn btn-danger btn-sm delete-prescription">
+                                            Remove
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" class="btn btn-secondary add-prescription">
+                            Add Another Prescription
+                        </button>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                {% if form.instance.pk %}Save Changes{% else %}Complete Examination{% endif %}
+                            </button>
+                            <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 for medicine selection
+        function initializeSelect2() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: 'Select a medicine'
+            });
+        }
+        initializeSelect2();
+
+        // Handle dynamic prescription forms
+        const prescriptionForms = $('#prescription-forms');
+        const totalFormsInput = $('#id_prescription_set-TOTAL_FORMS');
+        
+        $('.add-prescription').click(function() {
+            const totalForms = parseInt(totalFormsInput.val());
+            const newForm = prescriptionForms.children().last().clone(true);
+            
+            // Update form index
+            newForm.find(':input').each(function() {
+                const name = $(this).attr('name');
+                if (name) {
+                    name = name.replace('-' + (totalForms-1) + '-', '-' + totalForms + '-');
+                    $(this).attr('name', name);
+                    $(this).attr('id', 'id_' + name);
+                }
+            });
+            
+            // Clear values
+            newForm.find('input:not([type=hidden])').val('');
+            newForm.find('textarea').val('');
+            newForm.find('select').val(null);
+            
+            prescriptionForms.append(newForm);
+            totalFormsInput.val(totalForms + 1);
+            
+            // Reinitialize Select2
+            initializeSelect2();
+        });
+
+        // Handle prescription deletion
+        $('.delete-prescription').click(function() {
+            const form = $(this).closest('.prescription-form');
+            form.find('[id$=DELETE]').prop('checked', true);
+            form.hide();
+        });
+    });
+</script>
+{% endblock %}

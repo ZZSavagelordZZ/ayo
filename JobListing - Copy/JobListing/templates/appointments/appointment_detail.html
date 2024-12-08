@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>Appointment Details</h1>
+        <div class="card mb-4">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Patient</dt>
+                    <dd class="col-sm-9">
+                        <a href="{% url 'patient_detail' appointment.patient.pk %}">
+                            {{ appointment.patient.first_name }} {{ appointment.patient.last_name }}
+                        </a>
+                    </dd>
+                    
+                    <dt class="col-sm-3">Date & Time</dt>
+                    <dd class="col-sm-9">{{ appointment.date }} {{ appointment.time }}</dd>
+                    
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge {% if appointment.status == 'completed' %}bg-success{% elif appointment.status == 'cancelled' %}bg-danger{% else %}bg-primary{% endif %}">
+                            {{ appointment.status }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-3">Created By</dt>
+                    <dd class="col-sm-9">{{ appointment.created_by.username }}</dd>
+                    
+                    <dt class="col-sm-3">Created At</dt>
+                    <dd class="col-sm-9">{{ appointment.created_at }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% if user.role == 'doctor' and appointment.status == 'scheduled' %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Examination</h5>
+                {% if appointment.examination %}
+                    <dl class="row">
+                        <dt class="col-sm-3">Symptoms</dt>
+                        <dd class="col-sm-9">{{ appointment.examination.symptoms }}</dd>
+                        
+                        <dt class="col-sm-3">Diagnosis</dt>
+                        <dd class="col-sm-9">{{ appointment.examination.diagnosis }}</dd>
+                        
+                        <dt class="col-sm-3">Notes</dt>
+                        <dd class="col-sm-9">{{ appointment.examination.notes }}</dd>
+                    </dl>
+                {% else %}
+                    <a href="{% url 'examination_create' appointment.pk %}" class="btn btn-primary">Add Examination</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Actions</h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-warning">Edit Appointment</a>
+                    {% if appointment.status == 'scheduled' %}
+                        <form method="post" action="{% url 'appointment_update' appointment.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="completed">
+                            <button type="submit" class="btn btn-success w-100">Mark as Completed</button>
+                        </form>
+                        <form method="post" action="{% url 'appointment_update' appointment.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="btn btn-danger w-100">Cancel Appointment</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
