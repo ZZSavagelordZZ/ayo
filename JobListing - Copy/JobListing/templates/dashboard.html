@@ -1,145 +1,53 @@
 {% extends 'base.html' %}
 
-{% block extra_head %}
-<link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css' rel='stylesheet' />
-<link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.print.min.css' rel='stylesheet' media='print' />
-<style>
-    .fc-event {
-        cursor: pointer;
-    }
-    .appointment-event {
-        background-color: #3788d8;
-        border-color: #3788d8;
-    }
-    .busy-hours-event {
-        background-color: #dc3545;
-        border-color: #dc3545;
-    }
-    .dashboard-stats {
-        margin-bottom: 2rem;
-    }
-    .stat-card {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
-    .stat-number {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #3788d8;
-    }
-    .stat-label {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <!-- Stats Row -->
-    <div class="row dashboard-stats">
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-number">{{ total_patients }}</div>
-                <div class="stat-label">Total Patients</div>
+<div>
+    <!-- Stats Section -->
+    <div>
+        <div>
+            <div>
+                <div>{{ total_patients }}</div>
+                <div>Total Patients</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-number">{{ todays_appointments }}</div>
-                <div class="stat-label">Today's Appointments</div>
+        <div>
+            <div>
+                <div>{{ todays_appointments }}</div>
+                <div>Today's Appointments</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-number">{{ pending_appointments }}</div>
-                <div class="stat-label">Pending Appointments</div>
+        <div>
+            <div>
+                <div>{{ pending_appointments }}</div>
+                <div>Pending Appointments</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-number">{{ completed_this_week }}</div>
-                <div class="stat-label">Completed This Week</div>
+        <div>
+            <div>
+                <div>{{ completed_this_week }}</div>
+                <div>Completed This Week</div>
             </div>
         </div>
     </div>
 
-    <!-- Calendar Row -->
-    <div class="row">
-        <div class="col-md-9">
-            <div class="card">
-                <div class="card-body">
-                    <div id="calendar"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Today's Schedule</h5>
-                    <div class="list-group">
-                        {% for appointment in today_appointments %}
-                        <a href="{% url 'appointment_detail' appointment.pk %}" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ appointment.time|time:"H:i" }}</h6>
-                                <small class="text-muted">{{ appointment.status }}</small>
-                            </div>
-                            <p class="mb-1">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</p>
-                        </a>
-                        {% empty %}
-                        <p class="text-muted">No appointments scheduled for today.</p>
-                        {% endfor %}
+    <!-- Schedule Section -->
+    <div>
+        <div>
+            <h3>Today's Schedule</h3>
+            {% for appointment in today_appointments %}
+            <div>
+                <a href="{% url 'appointment_detail' appointment.pk %}">
+                    <div>
+                        <div>{{ appointment.time|time:"H:i" }}</div>
+                        <div>{{ appointment.status }}</div>
                     </div>
-                </div>
+                    <div>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</div>
+                </a>
             </div>
+            {% empty %}
+            <p>No appointments scheduled for today.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js'></script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js'></script>
-<script>
-    $(document).ready(function() {
-        $('#calendar').fullCalendar({
-            header: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'month,agendaWeek,agendaDay'
-            },
-            defaultView: 'agendaWeek',
-            navLinks: true,
-            selectable: true,
-            selectHelper: true,
-            editable: false,
-            eventLimit: true,
-            events: '/api/calendar-events/',  // We'll create this endpoint
-            eventClick: function(event) {
-                if (event.url) {
-                    window.location.href = event.url;
-                    return false;
-                }
-            },
-            select: function(start, end) {
-                var startTime = moment(start).format('YYYY-MM-DD HH:mm:ss');
-                window.location.href = `/appointments/new/?datetime=${startTime}`;
-            },
-            eventRender: function(event, element) {
-                element.addClass(event.className);
-                if (event.description) {
-                    element.attr('title', event.description);
-                }
-            }
-        });
-    });
-</script>
 {% endblock %} 

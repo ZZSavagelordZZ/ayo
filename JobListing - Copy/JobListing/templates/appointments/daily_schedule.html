@@ -1,59 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
     <h1>Daily Schedule</h1>
     <div>
-        <a href="{% url 'appointment_create' %}" class="btn btn-primary">New Appointment</a>
+        <a href="{% url 'appointment_create' %}">New Appointment</a>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="?date={{ prev_day|date:'Y-m-d' }}" class="btn btn-outline-primary">&laquo; Previous Day</a>
-            <h3 class="mb-0">{{ current_date|date:"l, F j, Y" }}</h3>
-            <a href="?date={{ next_day|date:'Y-m-d' }}" class="btn btn-outline-primary">Next Day &raquo;</a>
+<div>
+    <div>
+        <div>
+            <a href="?date={{ prev_day|date:'Y-m-d' }}">Previous Day</a>
+            <h3>{{ current_date|date:"l, F j, Y" }}</h3>
+            <a href="?date={{ next_day|date:'Y-m-d' }}">Next Day</a>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th style="width: 100px;">Time</th>
-                        <th>Appointment</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for time_slot in time_slots %}
-                    <tr {% if time_slot.is_busy %}class="bg-light"{% endif %}>
-                        <td>{{ time_slot.time|time:"H:i" }}</td>
-                        <td>
-                            {% if time_slot.appointment %}
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>{{ time_slot.appointment.patient.first_name }} 
-                                               {{ time_slot.appointment.patient.last_name }}</strong>
-                                        <br>
-                                        <small class="text-muted">{{ time_slot.appointment.status }}</small>
-                                    </div>
-                                    <div>
-                                        <a href="{% url 'appointment_detail' time_slot.appointment.pk %}" 
-                                           class="btn btn-sm btn-info">View</a>
-                                    </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Appointment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for time_slot in time_slots %}
+                <tr>
+                    <td>{{ time_slot.time|time:"H:i" }}</td>
+                    <td>
+                        {% if time_slot.appointment %}
+                            <div>
+                                <div>
+                                    <strong>{{ time_slot.appointment.patient.first_name }} 
+                                           {{ time_slot.appointment.patient.last_name }}</strong>
+                                    <br>
+                                    <small>{{ time_slot.appointment.status }}</small>
                                 </div>
-                            {% elif time_slot.is_busy %}
-                                <span class="text-muted">Busy - {{ time_slot.busy_reason }}</span>
-                            {% else %}
-                                <a href="{% url 'appointment_create' %}?date={{ current_date|date:'Y-m-d' }}&time={{ time_slot.time|time:'H:i' }}" 
-                                   class="btn btn-sm btn-outline-primary">+ Book</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                                <div>
+                                    <a href="{% url 'appointment_detail' time_slot.appointment.pk %}">View</a>
+                                </div>
+                            </div>
+                        {% elif time_slot.is_busy %}
+                            <span>Busy - {{ time_slot.busy_reason }}</span>
+                        {% else %}
+                            <a href="{% url 'appointment_create' %}?date={{ current_date|date:'Y-m-d' }}&time={{ time_slot.time|time:'H:i' }}">+ Book</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %} 

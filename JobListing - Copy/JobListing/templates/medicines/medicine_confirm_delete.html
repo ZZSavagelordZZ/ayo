@@ -1,21 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="card-title">Delete Medicine</h1>
-                <p>Are you sure you want to delete "{{ medicine.name }}" from the database?</p>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
-                        <a href="{% url 'medicine_detail' medicine.pk %}" class="btn btn-secondary">Cancel</a>
-                    </div>
-                </form>
+<div>
+    <div>
+        <h1>Delete Medicine</h1>
+        <p>Are you sure you want to delete "{{ medicine.name }}" from the database?</p>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                <button type="submit">Confirm Delete</button>
+                <a href="{% url 'medicine_detail' medicine.pk %}">Cancel</a>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}

@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
-    'pages',
     'listings',
 ]
 TIME_ZONE = 'America/New_York' 
